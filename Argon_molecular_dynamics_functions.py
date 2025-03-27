@@ -554,13 +554,13 @@ class molecular_motion:
             var_A = np.var(thinned_data)
 
             # Compute raw error (before conversion)
-            error = np.sqrt(var_A / len(thinned_data))
+            error = np.sqrt((2 * tau_estimated / len(thinned_data)) * var_A)
         else:
             error = np.nan  # If τ estimation fails, return NaN
 
         return tau_estimated, error, thinned_data
 
-    def data_blocking(self, data, tau_virial, min_block_size=1):
+    def data_blocking(self, data, tau, min_block_size=1):
         """
         Implements the data blocking method to estimate statistical errors.
 
@@ -568,7 +568,7 @@ class molecular_motion:
         ----------
         data : np.ndarray
             The input data series for which the error is to be estimated.
-        tau_virial : float
+        tau : float
             The estimated correlation time to determine max block size.
         min_block_size : int, optional
             The minimum block size to start with (default is 1).
@@ -582,7 +582,7 @@ class molecular_motion:
         np.ndarray
             Block-averaged data (statistically independent).
         """
-        max_block_size = int(np.round(tau_virial*5))   # Ensure it's an integer
+        max_block_size = int(np.round(tau*5))   # Ensure it's an integer
         N = len(data)
     
         block_sizes = []
