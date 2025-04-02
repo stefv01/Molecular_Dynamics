@@ -690,6 +690,8 @@ class molecular_motion:
         # Initialize the positions/velocities.
         pos[0] = init_pos
         vel[0] = init_vel
+        # Import time step:
+        Dt = self.Dt
         
         if method == 'euler':
         
@@ -701,15 +703,19 @@ class molecular_motion:
                 rel_pos_t, rel_dist_t = self.atomic_distances(pos[t - 1])
                 # Store the relative positions/distances, and energies:
                 rel_pos[t - 1], rel_dist[t - 1] = rel_pos_t, rel_dist_t
-                energy_values[t - 1] = self.energies(vel[t-1], rel_dist[t-1]) 
+                energy_values[t - 1] = self.energies(vel[t-1], rel_dist_t) 
         
                 # Implement the Euler method and store the positions/velocities
                 # at all time instances:
-                pos[t] = pos[t - 1] + vel[t - 1] * self.Dt
-                vel[t] = vel[t - 1] + self.lj_force(rel_pos_t, rel_dist_t) * self.Dt
+                pos[t] = pos[t - 1] + vel[t - 1] * Dt
+                vel[t] = vel[t - 1] + self.lj_force(rel_pos_t, rel_dist_t) * Dt
         
                 # Apply periodic B.C. if particles cross a boundary:
                 pos[t] = self.periodicBC(pos[t])
+
+            # Compute final relative positions, distances, and energies:
+            rel_pos[-1], rel_dist[-1] = rel_pos_t, rel_dist_t 
+            energy_values[-1] = self.energies(vel[-1], rel_dist_t) 
 
         elif method == 'verlet':
             
@@ -725,17 +731,17 @@ class molecular_motion:
                 
                 # Store the relative positions/distances, and energies:
                 rel_pos[t-1], rel_dist[t-1] = rel_pos_t1, rel_dist_t1
-                energy_values[t-1] = self.energies(vel[t-1], rel_dist[t-1]) 
+                energy_values[t-1] = self.energies(vel[t-1], rel_dist_t1) 
                 
                 # Implement the Verlet method and store the positions/velocities
                 # at all time instances:
-                pos[t] = pos[t - 1] + vel[t - 1] * self.Dt + forces_t1 * (self.Dt**2 / 2)
+                pos[t] = pos[t - 1] + vel[t - 1] * Dt + forces_t1 * (Dt**2 / 2)
 
                 # Compute relative positions/distances at the current time step:
                 rel_pos_t2, rel_dist_t2 = self.atomic_distances(pos[t])
                 forces_t2 = self.lj_force(rel_pos_t2, rel_dist_t2)
                 
-                vel[t] = vel[t-1] + 0.5 * (forces_t1 + forces_t2) * self.Dt
+                vel[t] = vel[t-1] + 0.5 * (forces_t1 + forces_t2) * Dt
 
                 # Update relative positions/distances for next iteration:
                 rel_pos_t1, rel_dist_t1 = rel_pos_t2, rel_dist_t2 
@@ -744,9 +750,9 @@ class molecular_motion:
                 # Apply periodic B.C. if particles cross a boundary:
                 pos[t] = self.periodicBC(pos[t])
     
-        # Compute final relative positions, distances, and energies:x
-        rel_pos[-1], rel_dist[-1] = self.atomic_distances(pos[-1])
-        energy_values[-1] = self.energies(vel[-1], rel_dist[-1]) 
+            # Compute final relative positions, distances, and energies:
+            rel_pos[-1], rel_dist[-1] = rel_pos_t2, rel_dist_t2 
+            energy_values[-1] = self.energies(vel[-1], rel_dist_t2) 
 
         if units == 'on':
             
